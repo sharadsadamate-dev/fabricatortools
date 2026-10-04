@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Weight calculator | FabricatorTools</title>
+<meta name="description" content="Free weight calculator for pipe, bar, angle and plate in mild steel, stainless steel 304 and aluminium.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<script src="/i18n.js"></script>
+</head>
+<body data-title="n_weight">
+<header class="top">
+<div class="ruler" aria-hidden="true"></div>
+<div class="wrap"><a class="brand" href="/">FabricatorTools</a><div id="langbar" class="langbar" role="group" aria-label="Language"></div></div>
+</header>
+<main class="wrap">
+<h1 data-i18n="n_weight"></h1>
+<p class="sub" data-i18n="s_weight"></p>
+<div class="panel">
+<div class="cols">
+<label class="field"><span data-i18n="material"></span><select id="mat"><option value="ms" data-i18n="m_ms"></option><option value="ss" data-i18n="m_ss"></option><option value="al" data-i18n="m_al"></option></select></label>
+<label class="field"><span data-i18n="shape"></span><select id="shape"><option value="round_pipe" data-i18n="sh_round_pipe"></option><option value="sq_pipe" data-i18n="sh_sq_pipe"></option><option value="rect_pipe" data-i18n="sh_rect_pipe"></option><option value="flat" data-i18n="sh_flat"></option><option value="round_bar" data-i18n="sh_round_bar"></option><option value="sq_bar" data-i18n="sh_sq_bar"></option><option value="angle" data-i18n="sh_angle"></option></select></label>
+</div>
+<div id="dims" class="cols"></div>
+<div class="cols">
+<label class="field"><span data-i18n="cut_len"></span><input id="len" inputmode="decimal" autocomplete="off" value="20"></label>
+<label class="field"><span data-i18n="unit"></span><select id="lunit"><option value="ft">ft</option><option value="m">m</option></select></label>
+</div>
+<label class="field"><span data-i18n="qty"></span><input id="qty" inputmode="numeric" autocomplete="off" value="1"></label>
+</div>
+<div id="err" class="err" role="alert" hidden></div>
+<div class="btns"><button type="button" class="btn full" id="go" data-i18n="calc"></button></div>
+<section class="out" id="out" aria-live="polite" hidden>
+<div class="lbl" data-i18n="total_w"></div>
+<div class="big" id="r_total"></div>
+<div class="kv"><span data-i18n="per_piece"></span><b id="r_piece"></b></div>
+<div class="kv"><span data-i18n="per_m"></span><b id="r_m"></b></div>
+<div class="kv"><span data-i18n="density"></span><b id="r_den"></b></div>
+</section>
+<p class="note" data-i18n="note_approx"></p>
+</main>
+<footer class="wrap">
+<!-- Google AdSense ad unit goes here after approval -->
+<p data-i18n="disclaimer"></p>
+<p><a href="/" >FabricatorTools</a> &middot; <a href="/privacy" data-i18n="privacy_link"></a></p>
+</footer>
+<script>
+(function(){
+"use strict";
+
+var RHO={ms:7.85,ss:7.93,al:2.70};
+var SH={
+  round_pipe:{f:[['D','f_OD'],['t','f_t']],area:function(v){return Math.PI*(v.D-v.t)*v.t;},ok:function(v){return v.t<v.D/2;}},
+  sq_pipe:{f:[['A','f_side'],['t','f_t']],area:function(v){return v.A*v.A-Math.pow(v.A-2*v.t,2);},ok:function(v){return v.t<v.A/2;}},
+  rect_pipe:{f:[['W','f_W'],['H','f_H'],['t','f_t']],area:function(v){return v.W*v.H-(v.W-2*v.t)*(v.H-2*v.t);},ok:function(v){return v.t<Math.min(v.W,v.H)/2;}},
+  flat:{f:[['W','f_W'],['t','f_t']],area:function(v){return v.W*v.t;},ok:function(){return true;}},
+  round_bar:{f:[['D','f_dia']],area:function(v){return Math.PI*v.D*v.D/4;},ok:function(){return true;}},
+  sq_bar:{f:[['A','f_side']],area:function(v){return v.A*v.A;},ok:function(){return true;}},
+  angle:{f:[['A','f_A'],['B','f_B'],['t','f_t']],area:function(v){return (v.A+v.B-v.t)*v.t;},ok:function(v){return v.t<Math.min(v.A,v.B);}}
+};
+var dims=document.getElementById('dims'),out=document.getElementById('out'),errEl=document.getElementById('err'),shown=false,kept={};
+function buildDims(){
+  Array.prototype.forEach.call(dims.querySelectorAll('input'),function(i){kept[i.getAttribute('data-k')]=i.value;});
+  dims.textContent='';
+  SH[document.getElementById('shape').value].f.forEach(function(p){
+    var l=document.createElement('label');l.className='field';
+    var s=document.createElement('span');s.setAttribute('data-i18n',p[1]);
+    var i=document.createElement('input');i.setAttribute('inputmode','decimal');i.setAttribute('autocomplete','off');i.setAttribute('data-k',p[0]);i.value=kept[p[0]]||'';
+    l.appendChild(s);l.appendChild(i);dims.appendChild(l);
+  });
+  applyI18n();
+}
+function fail(k){errEl.textContent=t(k);errEl.hidden=false;out.hidden=true;shown=false;}
+function run(){
+  errEl.hidden=true;
+  var sh=SH[document.getElementById('shape').value],v={},ok=true;
+  Array.prototype.forEach.call(dims.querySelectorAll('input'),function(i){var n=ft.num(i.value);v[i.getAttribute('data-k')]=n;if(!(n>0))ok=false;});
+  if(!ok||!sh.ok(v))return fail('err_dims');
+  var L=ft.num(document.getElementById('len').value),q=Math.floor(ft.num(document.getElementById('qty').value));
+  if(document.getElementById('lunit').value==='ft')L=L*0.3048;
+  if(!(L>0)||!(q>=1))return fail('err_len');
+  var rho=RHO[document.getElementById('mat').value];
+  var kgm=sh.area(v)*rho/1000,per=kgm*L;
+  document.getElementById('r_total').textContent=ft.dec(per*q,2)+' kg';
+  document.getElementById('r_piece').textContent=ft.dec(per,2)+' kg';
+  document.getElementById('r_m').textContent=ft.dec(kgm,3)+' kg/m';
+  document.getElementById('r_den').textContent=rho+' g/cm\u00B3';
+  out.hidden=false;shown=true;
+}
+document.getElementById('shape').addEventListener('change',function(){buildDims();out.hidden=true;shown=false;});
+document.getElementById('go').addEventListener('click',run);
+buildDims();
+document.addEventListener('langchange',function(){if(shown)run();});
+
+})();
+</script>
+</body>
+</html>

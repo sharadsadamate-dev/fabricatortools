@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pipe cutting calculator | FabricatorTools</title>
+<meta name="description" content="Free pipe cutting calculator: how many full pipes to buy for your cutting list, with a cutting plan and waste.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<script src="/i18n.js"></script>
+</head>
+<body data-title="n_pipe">
+<header class="top">
+<div class="ruler" aria-hidden="true"></div>
+<div class="wrap"><a class="brand" href="/">FabricatorTools</a><div id="langbar" class="langbar" role="group" aria-label="Language"></div></div>
+</header>
+<main class="wrap">
+<h1 data-i18n="n_pipe"></h1>
+<p class="sub" data-i18n="s_pipe"></p>
+<div class="panel">
+<div class="cols">
+<label class="field"><span data-i18n="stock_len"></span><input id="stock" inputmode="decimal" autocomplete="off" value="20"></label>
+<label class="field"><span data-i18n="unit"></span><select id="unit"><option value="ft">ft</option><option value="inch">inch</option><option value="mm">mm</option><option value="m">m</option></select></label>
+</div>
+<label class="field"><span data-i18n="kerf"></span><input id="kerf" inputmode="decimal" autocomplete="off" value="3"></label>
+</div>
+<div class="panel">
+<h2 data-i18n="cuts_h"></h2>
+<div id="rows"></div>
+<button type="button" class="btn ghost full" id="add" data-i18n="add_piece"></button>
+</div>
+<div id="err" class="err" role="alert" hidden></div>
+<div class="btns"><button type="button" class="btn full" id="go" data-i18n="calc"></button></div>
+<section class="out" id="out" aria-live="polite" hidden>
+<div class="lbl" data-i18n="pipes_needed"></div>
+<div class="big" id="r_pipes"></div>
+<div class="kv"><span data-i18n="total_need"></span><b id="r_total"></b></div>
+<div class="kv"><span data-i18n="waste"></span><b id="r_waste"></b></div>
+<div class="lbl" style="margin-top:12px" data-i18n="plan_h"></div>
+<ul class="plan" id="plan"></ul>
+</section>
+</main>
+<footer class="wrap">
+<!-- Google AdSense ad unit goes here after approval -->
+<p data-i18n="disclaimer"></p>
+<p><a href="/" >FabricatorTools</a> &middot; <a href="/privacy" data-i18n="privacy_link"></a></p>
+</footer>
+<script>
+(function(){
+"use strict";
+
+var rowsEl=document.getElementById('rows'),out=document.getElementById('out'),errEl=document.getElementById('err'),shown=false;
+function addRow(l,q){
+  var d=document.createElement('div');d.className='item';
+  d.innerHTML='<div class="cols"><label class="field"><span data-i18n="cut_len"></span><input class="len" inputmode="decimal" autocomplete="off"></label><label class="field"><span data-i18n="qty"></span><input class="qty" inputmode="numeric" autocomplete="off"></label></div><button type="button" class="link rm" data-i18n="remove"></button>';
+  d.querySelector('.len').value=l||'';d.querySelector('.qty').value=q||'';
+  d.querySelector('.rm').addEventListener('click',function(){
+    if(rowsEl.children.length>1){rowsEl.removeChild(d);}else{d.querySelector('.len').value='';d.querySelector('.qty').value='';}
+  });
+  rowsEl.appendChild(d);applyI18n();
+}
+function fail(k){errEl.textContent=t(k);errEl.hidden=false;out.hidden=true;shown=false;}
+function run(){
+  errEl.hidden=true;
+  var u=document.getElementById('unit').value;
+  var f={ft:304.8,inch:25.4,mm:1,m:1000}[u];
+  var stock=ft.num(document.getElementById('stock').value)*f;
+  var kerf=ft.num(document.getElementById('kerf').value);if(!isFinite(kerf)||kerf<0)kerf=0;
+  if(!(stock>0))return fail('err_stock');
+  var pcs=[],count=0,items=rowsEl.querySelectorAll('.item');
+  for(var i=0;i<items.length;i++){
+    var l=ft.num(items[i].querySelector('.len').value)*f;
+    var q=Math.floor(ft.num(items[i].querySelector('.qty').value));
+    if(l>0&&q>0){
+      if(l>stock+1e-9)return fail('err_long');
+      count+=q;if(count>5000)return fail('err_many');
+      for(var j=0;j<q;j++)pcs.push(l);
+    }
+  }
+  if(!pcs.length)return fail('err_none');
+  pcs.sort(function(a,b){return b-a;});
+  var bins=[];
+  pcs.forEach(function(p){
+    var need=p+kerf,placed=false;
+    for(var b=0;b<bins.length;b++){
+      if(bins[b].used+need<=stock+kerf+1e-9){bins[b].used+=need;bins[b].cuts.push(p);placed=true;break;}
+    }
+    if(!placed)bins.push({used:need,cuts:[p]});
+  });
+  var sum=pcs.reduce(function(a,b){return a+b;},0);
+  var waste=bins.length*stock-sum;
+  function show(mm){return ft.dec(mm/f,2)+' '+u;}
+  document.getElementById('r_pipes').textContent=bins.length;
+  document.getElementById('r_total').textContent=show(sum);
+  document.getElementById('r_waste').textContent=show(waste)+' ('+ft.dec(waste/(bins.length*stock)*100,1)+'%)';
+  var plan=document.getElementById('plan');plan.textContent='';
+  var groups=[],map={};
+  bins.forEach(function(b){
+    var s=b.cuts.reduce(function(a,c){return a+c;},0);
+    var left=Math.max(0,stock-s-kerf*b.cuts.length);
+    var key=b.cuts.join(',')+'|'+Math.round(left);
+    if(map[key]){map[key].n++;}else{map[key]={n:1,cuts:b.cuts,left:left};groups.push(map[key]);}
+  });
+  var idx=0;
+  groups.forEach(function(g){
+    var li=document.createElement('li');
+    var label=g.n>1?t('pipe_n')+' '+(idx+1)+'-'+(idx+g.n)+' (x'+g.n+')':t('pipe_n')+' '+(idx+1);
+    idx+=g.n;
+    li.textContent=label+': '+g.cuts.map(function(c){return ft.dec(c/f,2);}).join(' + ')+' \u2192 '+show(g.left)+' '+t('left');
+    plan.appendChild(li);
+  });
+  out.hidden=false;shown=true;
+}
+document.getElementById('add').addEventListener('click',function(){addRow('','');});
+document.getElementById('go').addEventListener('click',run);
+addRow('','');
+document.addEventListener('langchange',function(){if(shown)run();});
+
+})();
+</script>
+</body>
+</html>
