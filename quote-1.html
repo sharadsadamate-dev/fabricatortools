@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quotation maker | FabricatorTools</title>
+<meta name="description" content="Free quotation maker for fabricators: add items, labour, transport, profit and GST, then share the quote on WhatsApp.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<script src="/i18n.js"></script>
+</head>
+<body data-title="n_quote">
+<header class="top">
+<div class="ruler" aria-hidden="true"></div>
+<div class="wrap"><a class="brand" href="/">FabricatorTools</a><div id="langbar" class="langbar" role="group" aria-label="Language"></div></div>
+</header>
+<main class="wrap">
+<h1 data-i18n="n_quote"></h1>
+<p class="sub" data-i18n="s_quote"></p>
+<div class="panel">
+<label class="field"><span data-i18n="customer"></span><input id="cust" maxlength="60" autocomplete="off"></label>
+</div>
+<div class="panel">
+<h2 data-i18n="items_h"></h2>
+<div id="rows"></div>
+<button type="button" class="btn ghost full" id="add" data-i18n="add_item"></button>
+</div>
+<div class="panel">
+<div class="cols">
+<label class="field"><span data-i18n="labour"></span><input id="labour" inputmode="decimal" autocomplete="off"></label>
+<label class="field"><span data-i18n="transport"></span><input id="transport" inputmode="decimal" autocomplete="off"></label>
+<label class="field"><span data-i18n="profit_pct"></span><input id="margin" inputmode="decimal" autocomplete="off" value="10"></label>
+</div>
+<label class="field chk"><input type="checkbox" id="gstreg"><span data-i18n="gst_reg"></span></label>
+<div id="gstbox" hidden>
+<label class="field"><span data-i18n="gstin"></span><input id="gstin" maxlength="15" autocapitalize="characters" autocomplete="off"></label>
+<label class="field"><span data-i18n="gst_pct"></span><select id="gst"><option value="5">5%</option><option value="12">12%</option><option value="18" selected>18%</option><option value="28">28%</option></select></label>
+</div>
+<p class="note" style="margin:0" data-i18n="gst_note"></p>
+</div>
+<section class="out" id="out" aria-live="polite">
+<div class="lbl" data-i18n="o_total"></div>
+<div class="big" id="r_total">&#8377;0</div>
+<div class="kv"><span data-i18n="o_items"></span><b id="r_items"></b></div>
+<div class="kv"><span data-i18n="o_lt"></span><b id="r_lt"></b></div>
+<div class="kv"><span data-i18n="o_profit"></span><b id="r_profit"></b></div>
+<div class="kv" id="gstrow" hidden><span data-i18n="o_gst"></span><b id="r_gst"></b></div>
+</section>
+<div id="err" class="err" role="alert" hidden></div>
+<div class="btns noprint">
+<button type="button" class="btn full" id="wa" data-i18n="share_wa"></button>
+<button type="button" class="btn ghost full" id="cp" data-i18n="copy_q"></button>
+<button type="button" class="btn ghost full" id="pr" data-i18n="print"></button>
+</div>
+</main>
+<footer class="wrap">
+<!-- Google AdSense ad unit goes here after approval -->
+<p data-i18n="disclaimer"></p>
+<p><a href="/" >FabricatorTools</a> &middot; <a href="/privacy" data-i18n="privacy_link"></a></p>
+</footer>
+<script>
+(function(){
+"use strict";
+
+var rowsEl=document.getElementById('rows'),errEl=document.getElementById('err'),Q=null;
+function pos(v){var n=ft.num(v);return isFinite(n)&&n>0?n:0;}
+function addRow(){
+  var d=document.createElement('div');d.className='item';
+  d.innerHTML='<div class="cols"><label class="field full"><span data-i18n="item_name"></span><input class="nm" maxlength="60" autocomplete="off"></label><label class="field"><span data-i18n="qty"></span><input class="q" inputmode="decimal" autocomplete="off" value="1"></label><label class="field"><span data-i18n="rate"></span><input class="r" inputmode="decimal" autocomplete="off"></label></div><div class="linetotal"><span class="lt"></span></div><button type="button" class="link rm" data-i18n="remove"></button>';
+  d.querySelector('.rm').addEventListener('click',function(){
+    if(rowsEl.children.length>1){rowsEl.removeChild(d);}else{d.querySelector('.nm').value='';d.querySelector('.q').value='1';d.querySelector('.r').value='';}
+    calc();
+  });
+  rowsEl.appendChild(d);applyI18n();
+}
+function calc(){
+  var items=[],sum=0;
+  Array.prototype.forEach.call(rowsEl.querySelectorAll('.item'),function(d){
+    var q=pos(d.querySelector('.q').value),r=pos(d.querySelector('.r').value),line=q*r;
+    d.querySelector('.lt').textContent=line>0?ft.inr(line):'';
+    if(line>0){items.push({name:d.querySelector('.nm').value.trim(),q:q,r:r,line:line});sum+=line;}
+  });
+  var lab=pos(document.getElementById('labour').value),tr=pos(document.getElementById('transport').value);
+  var mp=Math.min(pos(document.getElementById('margin').value),1000),on=document.getElementById('gstreg').checked,gp=on?ft.num(document.getElementById('gst').value):0;
+  var sub=sum+lab+tr,profit=sub*mp/100,pre=sub+profit,gst=pre*gp/100,total=pre+gst;
+  Q={items:items,sum:sum,other:pre-sum,gst:gst,gp:gp,on:on,total:total};
+  document.getElementById('gstbox').hidden=!on;document.getElementById('gstrow').hidden=!on;
+  document.getElementById('r_total').textContent=ft.inr(total);
+  document.getElementById('r_items').textContent=ft.inr(sum);
+  document.getElementById('r_lt').textContent=ft.inr(lab+tr);
+  document.getElementById('r_profit').textContent=ft.inr(profit);
+  document.getElementById('r_gst').textContent=ft.inr(gst);
+}
+function text(){
+  var L=[],c=document.getElementById('cust').value.trim();
+  L.push(t('x_title')+(c?' - '+c:''));
+  if(Q.on)L.push('GSTIN: '+gstinVal());
+  Q.items.forEach(function(it,i){L.push((i+1)+'. '+(it.name||t('item_name'))+': '+ft.dec(it.q,2)+' x '+ft.inr(it.r)+' = '+ft.inr(it.line));});
+  if(Q.other>0.5)L.push(t('x_other')+': '+ft.inr(Q.other));
+  if(Q.on&&Q.gst>0.5)L.push('GST '+Q.gp+'%: '+ft.inr(Q.gst));
+  L.push(t('o_total')+': '+ft.inr(Q.total));
+  L.push(t('x_note'));
+  return L.join('\n');
+}
+function gstinVal(){return document.getElementById('gstin').value.trim().toUpperCase();}
+var GSTIN=/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+function ready(){
+  calc();
+  if(!Q.items.length){errEl.textContent=t('err_item');errEl.hidden=false;return false;}
+  if(Q.on&&!GSTIN.test(gstinVal())){errEl.textContent=t('err_gstin');errEl.hidden=false;return false;}
+  errEl.hidden=true;return true;
+}
+document.getElementById('wa').addEventListener('click',function(){
+  if(!ready())return;
+  window.open('https://wa.me/?text='+encodeURIComponent(text()),'_blank','noopener');
+});
+document.getElementById('cp').addEventListener('click',function(){
+  if(!ready())return;
+  var btn=this,old=btn.textContent;
+  function done(){btn.textContent=t('copied');setTimeout(function(){btn.textContent=t('copy_q');},1500);}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text()).then(done,function(){});}
+  else{var ta=document.createElement('textarea');ta.value=text();document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done();}catch(e){}document.body.removeChild(ta);}
+});
+document.getElementById('pr').addEventListener('click',function(){if(ready())window.print();});
+document.getElementById('add').addEventListener('click',addRow);
+['labour','transport','margin','gst','gstreg','gstin'].forEach(function(id){document.getElementById(id).addEventListener('input',calc);document.getElementById(id).addEventListener('change',calc);});
+rowsEl.addEventListener('input',calc);
+addRow();calc();
+document.addEventListener('langchange',calc);
+
+})();
+</script>
+</body>
+</html>

@@ -104,6 +104,11 @@
     share_wa: ["Share on WhatsApp", "WhatsApp वर पाठवा", "WhatsApp पर भेजें"],
     copy_q: ["Copy quote", "कोटेशन कॉपी करा", "कोटेशन कॉपी करें"],
     print: ["Print", "प्रिंट", "प्रिंट"],
+    gst_reg: ["I am GST registered (add GST to quote)", "मी GST नोंदणीकृत आहे (कोटेशनमध्ये GST जोडा)", "मैं GST पंजीकृत हूँ (कोटेशन में GST जोड़ें)"],
+    gstin: ["My GSTIN", "माझा GSTIN", "मेरा GSTIN"],
+    gst_note: ["Only a GST-registered seller can charge GST. This is an estimate, not a tax invoice.", "GST फक्त GST नोंदणीकृत विक्रेताच लावू शकतो. हे अंदाजपत्रक आहे, टॅक्स इन्व्हॉइस नाही.", "GST केवल GST पंजीकृत विक्रेता ही लगा सकता है। यह अनुमान है, टैक्स इनवॉइस नहीं।"],
+    err_gstin: ["Enter a valid 15-character GSTIN to add GST.", "GST जोडण्यासाठी वैध १५ अक्षरी GSTIN भरा.", "GST जोड़ने के लिए सही 15 अंकों का GSTIN भरें।"],
+    x_note: ["Estimate only. Not a tax invoice.", "हे फक्त अंदाजपत्रक आहे. टॅक्स इन्व्हॉइस नाही.", "यह केवल अनुमान है। टैक्स इनवॉइस नहीं।"],
     err_item: ["Add at least one item with quantity and rate.", "संख्या आणि दरासह किमान एक वस्तू भरा.", "संख्या और दर के साथ कम से कम एक सामान भरें।"],
     // column
     s_col: ["Enter the water-level reading and column height for each column.", "प्रत्येक खांबाचे पाण्याच्या पातळीचे रीडिंग आणि खांबाची उंची भरा.", "हर खंभे की पानी के लेवल की रीडिंग और खंभे की ऊँचाई भरें।"],
