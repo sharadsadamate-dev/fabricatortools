@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Column height calculator | FabricatorTools</title>
+<meta name="description" content="Free column height calculator: total column height from water-level readings, pit depth and murum filling.">
+<meta name="theme-color" content="#F2B705">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Column height calculator | FabricatorTools">
+<meta property="og:description" content="Free column height calculator: total column height from water-level readings, pit depth and murum filling.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23F2B705'/%3E%3Cpath d='M6 20h20M9 20v-4M13 20v-2M17 20v-4M21 20v-2M25 20v-4' stroke='%2319262E' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<script src="/i18n.js"></script>
+<script src="/ads.js" defer></script>
+</head>
+<body data-title="n_col">
+<header class="top">
+<div class="ruler" aria-hidden="true"></div>
+<div class="wrap"><a class="brand" href="/">FabricatorTools</a><div id="langbar" class="langbar" role="group" aria-label="Language"></div></div>
+</header>
+<div class="wrap shell">
+<main>
+<h1 data-i18n="n_col"></h1>
+<p class="sub" data-i18n="s_col"></p>
+<div class="panel">
+<div class="cols">
+<label class="field"><span data-i18n="c_pit"></span><input id="pit" inputmode="decimal" autocomplete="off" value="18"></label>
+<label class="field"><span data-i18n="c_fill"></span><input id="fill" inputmode="decimal" autocomplete="off" value="12"></label>
+</div>
+<p class="note" style="margin:0" data-i18n="c_formula"></p>
+</div>
+<div class="panel">
+<div id="rows"></div>
+<button type="button" class="btn ghost full" id="add" data-i18n="add_col"></button>
+</div>
+<div id="err" class="err" role="alert" hidden></div>
+<div class="btns"><button type="button" class="btn full" id="go" data-i18n="calc"></button></div>
+<section class="out" id="out" aria-live="polite" hidden>
+<div class="lbl" data-i18n="c_total"></div>
+<ul class="plan" id="list"></ul>
+</section>
+<div class="ad ad-inline" data-ad="inline" hidden></div>
+<nav class="more" aria-labelledby="more_h"><h2 id="more_h" data-i18n="more_h"></h2><a href="/pipe" data-i18n="n_pipe"></a><a href="/weight" data-i18n="n_weight"></a><a href="/glass" data-i18n="n_glass"></a><a href="/quote" data-i18n="n_quote"></a></nav>
+</main>
+<aside class="side" aria-label="Advertisement"><div class="ad ad-side" data-ad="side" hidden></div></aside>
+</div>
+<footer class="wrap">
+<p data-i18n="disclaimer"></p>
+<p><a href="/">FabricatorTools</a> &middot; <a href="/privacy" data-i18n="privacy_link"></a></p>
+</footer>
+<script>
+(function(){
+"use strict";
+
+var rowsEl=document.getElementById('rows'),out=document.getElementById('out'),errEl=document.getElementById('err'),shown=false,n=0;
+function addRow(w,h){
+  n++;
+  var d=document.createElement('div');d.className='item';
+  d.innerHTML='<div class="cols"><label class="field full"><span data-i18n="c_name"></span><input class="nm" maxlength="30" autocomplete="off"></label><label class="field"><span data-i18n="c_water"></span><input class="w" inputmode="decimal" autocomplete="off"></label><label class="field"><span data-i18n="c_height"></span><input class="h" inputmode="decimal" autocomplete="off"></label></div><button type="button" class="link rm" data-i18n="remove"></button>';
+  d.querySelector('.nm').value=String(n);d.querySelector('.w').value=w||'';d.querySelector('.h').value=h||'';
+  d.querySelector('.rm').addEventListener('click',function(){
+    if(rowsEl.children.length>1){rowsEl.removeChild(d);}else{d.querySelector('.w').value='';d.querySelector('.h').value='';}
+  });
+  rowsEl.appendChild(d);applyI18n();
+}
+function feet(inch){
+  var f=Math.floor(inch/12),r=Math.round((inch-f*12)*10)/10;
+  if(r>=12){f+=1;r=0;}
+  return f+"'"+ft.dec(r,1)+'"';
+}
+function fail(k){errEl.textContent=t(k);errEl.hidden=false;out.hidden=true;shown=false;}
+function run(){
+  errEl.hidden=true;
+  var pit=ft.num(document.getElementById('pit').value),fill=ft.num(document.getElementById('fill').value);
+  if(!isFinite(pit))pit=0;if(!isFinite(fill))fill=0;
+  var list=document.getElementById('list');list.textContent='';var any=false;
+  Array.prototype.forEach.call(rowsEl.querySelectorAll('.item'),function(d){
+    var w=ft.num(d.querySelector('.w').value),h=ft.num(d.querySelector('.h').value);
+    if(!isFinite(w)||!(h>0))return;
+    var total=w-pit+fill+h,li=document.createElement('li');
+    li.textContent=t('c_name')+' '+d.querySelector('.nm').value.trim()+': '+ft.dec(total,1)+' in = '+feet(total);
+    list.appendChild(li);any=true;
+  });
+  if(!any)return fail('err_col');
+  out.hidden=false;shown=true;
+}
+document.getElementById('add').addEventListener('click',function(){addRow('','');});
+document.getElementById('go').addEventListener('click',run);
+addRow('','');
+document.addEventListener('langchange',function(){if(shown)run();});
+
+})();
+</script>
+</body>
+</html>

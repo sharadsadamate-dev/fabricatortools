@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Glass area calculator | FabricatorTools</title>
+<meta name="description" content="Free glass area calculator: square feet, weight and cost for glass panes in mm, inch or feet.">
+<meta name="theme-color" content="#F2B705">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Glass area calculator | FabricatorTools">
+<meta property="og:description" content="Free glass area calculator: square feet, weight and cost for glass panes in mm, inch or feet.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23F2B705'/%3E%3Cpath d='M6 20h20M9 20v-4M13 20v-2M17 20v-4M21 20v-2M25 20v-4' stroke='%2319262E' stroke-width='2' fill='none'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<script src="/i18n.js"></script>
+<script src="/ads.js" defer></script>
+</head>
+<body data-title="n_glass">
+<header class="top">
+<div class="ruler" aria-hidden="true"></div>
+<div class="wrap"><a class="brand" href="/">FabricatorTools</a><div id="langbar" class="langbar" role="group" aria-label="Language"></div></div>
+</header>
+<div class="wrap shell">
+<main>
+<h1 data-i18n="n_glass"></h1>
+<p class="sub" data-i18n="s_glass"></p>
+<div class="panel">
+<div class="cols">
+<label class="field"><span data-i18n="unit"></span><select id="unit"><option value="inch">inch</option><option value="mm">mm</option><option value="ft">ft</option></select></label>
+<label class="field"><span data-i18n="g_thick"></span><select id="thick"><option>4</option><option>5</option><option>6</option><option selected>8</option><option>10</option><option>12</option></select></label>
+</div>
+<label class="field"><span data-i18n="g_rate"></span><input id="rate" inputmode="decimal" autocomplete="off"></label>
+</div>
+<div class="panel">
+<h2 data-i18n="panes_h"></h2>
+<div id="rows"></div>
+<button type="button" class="btn ghost full" id="add" data-i18n="add_pane"></button>
+</div>
+<div id="err" class="err" role="alert" hidden></div>
+<div class="btns"><button type="button" class="btn full" id="go" data-i18n="calc"></button></div>
+<section class="out" id="out" aria-live="polite" hidden>
+<div class="lbl" data-i18n="area_sqft"></div>
+<div class="big" id="r_sqft"></div>
+<div class="kv"><span data-i18n="area_sqm"></span><b id="r_sqm"></b></div>
+<div class="kv"><span data-i18n="panes_n"></span><b id="r_n"></b></div>
+<div class="kv"><span data-i18n="weight"></span><b id="r_kg"></b></div>
+<div class="kv" id="costrow" hidden><span data-i18n="cost"></span><b id="r_cost"></b></div>
+</section>
+<p class="note" data-i18n="note_glass"></p>
+<div class="ad ad-inline" data-ad="inline" hidden></div>
+<nav class="more" aria-labelledby="more_h"><h2 id="more_h" data-i18n="more_h"></h2><a href="/pipe" data-i18n="n_pipe"></a><a href="/weight" data-i18n="n_weight"></a><a href="/quote" data-i18n="n_quote"></a><a href="/column" data-i18n="n_col"></a></nav>
+</main>
+<aside class="side" aria-label="Advertisement"><div class="ad ad-side" data-ad="side" hidden></div></aside>
+</div>
+<footer class="wrap">
+<p data-i18n="disclaimer"></p>
+<p><a href="/">FabricatorTools</a> &middot; <a href="/privacy" data-i18n="privacy_link"></a></p>
+</footer>
+<script>
+(function(){
+"use strict";
+
+var rowsEl=document.getElementById('rows'),out=document.getElementById('out'),errEl=document.getElementById('err'),shown=false;
+function addRow(){
+  var d=document.createElement('div');d.className='item';
+  d.innerHTML='<div class="cols" style="--n:3"><label class="field"><span data-i18n="g_w"></span><input class="w" inputmode="decimal" autocomplete="off"></label><label class="field"><span data-i18n="g_h"></span><input class="h" inputmode="decimal" autocomplete="off"></label><label class="field"><span data-i18n="qty"></span><input class="q" inputmode="numeric" autocomplete="off" value="1"></label></div><button type="button" class="link rm" data-i18n="remove"></button>';
+  d.querySelector('.rm').addEventListener('click',function(){
+    if(rowsEl.children.length>1){rowsEl.removeChild(d);}else{d.querySelector('.w').value='';d.querySelector('.h').value='';d.querySelector('.q').value='1';}
+  });
+  rowsEl.appendChild(d);applyI18n();
+}
+function fail(k){errEl.textContent=t(k);errEl.hidden=false;out.hidden=true;shown=false;}
+function run(){
+  errEl.hidden=true;
+  var f={mm:1/304.8,inch:1/12,ft:1}[document.getElementById('unit').value];
+  var sqft=0,n=0,items=rowsEl.querySelectorAll('.item');
+  for(var i=0;i<items.length;i++){
+    var w=ft.num(items[i].querySelector('.w').value),h=ft.num(items[i].querySelector('.h').value),q=Math.floor(ft.num(items[i].querySelector('.q').value));
+    if(w>0&&h>0&&q>0){sqft+=(w*f)*(h*f)*q;n+=q;}
+  }
+  if(!n)return fail('err_pane');
+  var sqm=sqft*0.09290304,th=ft.num(document.getElementById('thick').value),rate=ft.num(document.getElementById('rate').value);
+  document.getElementById('r_sqft').textContent=ft.dec(sqft,2);
+  document.getElementById('r_sqm').textContent=ft.dec(sqm,2);
+  document.getElementById('r_n').textContent=n;
+  document.getElementById('r_kg').textContent=ft.dec(sqm*th*2.5,1)+' kg';
+  var cr=document.getElementById('costrow');
+  if(rate>0){document.getElementById('r_cost').textContent=ft.inr(sqft*rate);cr.hidden=false;}else{cr.hidden=true;}
+  out.hidden=false;shown=true;
+}
+document.getElementById('add').addEventListener('click',addRow);
+document.getElementById('go').addEventListener('click',run);
+addRow();
+document.addEventListener('langchange',function(){if(shown)run();});
+
+})();
+</script>
+</body>
+</html>

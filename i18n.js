@@ -16,6 +16,8 @@
     d_quote: ["Add items, labour and GST. Share the quote on WhatsApp.", "वस्तू, मजुरी आणि GST जोडा. कोटेशन WhatsApp वर पाठवा.", "सामान, मज़दूरी और GST जोड़ें। कोटेशन WhatsApp पर भेजें।"],
     n_col: ["Column height calculator", "खांब उंची कॅल्क्युलेटर", "खंभा ऊँचाई कैलकुलेटर"],
     d_col: ["Total column height from water-level readings.", "पाण्याच्या पातळीच्या रीडिंगवरून खांबाची एकूण उंची.", "पानी के लेवल की रीडिंग से खंभे की कुल ऊँचाई।"],
+    more_h: ["More calculators", "आणखी कॅल्क्युलेटर", "और कैलकुलेटर"],
+    ad_label: ["Advertisement", "जाहिरात", "विज्ञापन"],
     unit: ["Unit", "एकक", "इकाई"],
     qty: ["Qty", "संख्या", "संख्या"],
     remove: ["Remove", "काढा", "हटाएँ"],
